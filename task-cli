@@ -63,19 +63,20 @@ if ($command === 'add') {
 
     // If argument is equal to 1, the expected argument is description
     // otherwise die
-    if ($commandArgumentCounts !== 1) {
-        die("Invalid arguments.");
-    }
+    invalidArguments(
+        numberOfArguments     : $commandArgumentCounts,
+        allowedNumberArguments: 1
+    );
 
     // Check if file exists, create if not exists
-    if (!file_exists(FILE_NAME)) touch(FILE_NAME);
+    createFileIfNotExists();
 
     /**
      * Get data of the file
      *
      * @var array $data
      */
-    $data =  json_decode(file_get_contents(FILE_NAME), true);;
+    $data = data();
 
     /**
      * Get latest id of the data
@@ -107,19 +108,20 @@ if ($command === 'update') {
 
     // If argument is equal to 2, the expected argument is id and description
     // otherwise die
-    if ($commandArgumentCounts !== 2) {
-        die("Invalid arguments.");
-    }
+    invalidArguments(
+        numberOfArguments     : $commandArgumentCounts,
+        allowedNumberArguments: 2
+    );
 
     // Check if file exists, create if not exists
-    if (!file_exists(FILE_NAME)) touch(FILE_NAME);
+    createFileIfNotExists();
 
     /**
      * Get data of the file
      *
      * @var array $data
      */
-    $data = json_decode(file_get_contents(FILE_NAME), true);
+    $data = data();
 
     /**
      * Get the specified id to update
@@ -137,7 +139,7 @@ if ($command === 'update') {
 
     // Check if id exists on data
     // otherwise throw no record found
-    if (!in_array($id, array_column($data, 'id'))) die('No record found');
+    noRecordFound($id, $data);
 
     // Update description and updatedAt of data
     $data = array_map(function (array $datum) use ($id, $description) {
@@ -160,19 +162,20 @@ if ($command === 'delete') {
 
     // If argument is equal to 1, the expected argument is id
     // otherwise die
-    if ($commandArgumentCounts !== 1) {
-        die("Invalid arguments.");
-    }
+    invalidArguments(
+        numberOfArguments     : $commandArgumentCounts,
+        allowedNumberArguments: 1
+    );
 
     // Check if file exists, create if not exists
-    if (!file_exists(FILE_NAME)) touch(FILE_NAME);
+    createFileIfNotExists();
 
     /**
      * Get data of the file
      *
      * @var array $data
      */
-    $data = json_decode(file_get_contents(FILE_NAME), true);
+    $data = data();
 
     /**
      * Get the specified id to delete
@@ -183,10 +186,10 @@ if ($command === 'delete') {
 
     // Check if id exists on data
     // otherwise throw no record found
-    if (!in_array($id, array_column($data, 'id'))) die('No record found');
+    noRecordFound($id, $data);
 
     // Update description and updatedAt of data
-    $data = array_filter($data, fn (array $datum) => (string) $datum['id'] !== $id);
+    $data = array_filter($data, fn(array $datum) => (string)$datum['id'] !== $id);
 
     file_put_contents(FILE_NAME, json_encode([...$data]));
 
@@ -200,19 +203,20 @@ if ($command === 'mark-in-progress') {
 
     // If argument is equal to 1, the expected argument is id
     // otherwise die
-    if ($commandArgumentCounts !== 1) {
-        die("Invalid arguments.");
-    }
+    invalidArguments(
+        numberOfArguments     : $commandArgumentCounts,
+        allowedNumberArguments: 1
+    );
 
     // Check if file exists, create if not exists
-    if (!file_exists(FILE_NAME)) touch(FILE_NAME);
+    createFileIfNotExists();
 
     /**
      * Get data of the file
      *
      * @var array $data
      */
-    $data = json_decode(file_get_contents(FILE_NAME), true);
+    $data = data();
 
     /**
      * Get the specified id to update
@@ -223,7 +227,7 @@ if ($command === 'mark-in-progress') {
 
     // Check if id exists on data
     // otherwise throw no record found
-    if (!in_array($id, array_column($data, 'id'))) die('No record found');
+    noRecordFound($id, $data);
 
     // Update description and updatedAt of data
     $data = array_map(function (array $datum) use ($id) {
@@ -245,19 +249,20 @@ if ($command === 'mark-done') {
 
     // If argument is equal to 1, the expected argument is id
     // otherwise die
-    if ($commandArgumentCounts !== 1) {
-        die("Invalid arguments.");
-    }
+    invalidArguments(
+        numberOfArguments     : $commandArgumentCounts,
+        allowedNumberArguments: 1
+    );
 
     // Check if file exists, create if not exists
-    if (!file_exists(FILE_NAME)) touch(FILE_NAME);
+    createFileIfNotExists();
 
     /**
      * Get data of the file
      *
      * @var array $data
      */
-    $data = json_decode(file_get_contents(FILE_NAME), true);
+    $data = data();
 
     /**
      * Get the specified id to update
@@ -268,7 +273,7 @@ if ($command === 'mark-done') {
 
     // Check if id exists on data
     // otherwise throw no record found
-    if (!in_array($id, array_column($data, 'id'))) die('No record found');
+    noRecordFound($id, $data);
 
     // Update description and updatedAt of data
     $data = array_map(function (array $datum) use ($id) {
@@ -301,7 +306,7 @@ if ($command === 'list') {
     }
 
     // Check if file exists, create if not exists
-    if (!file_exists(FILE_NAME)) touch(FILE_NAME);
+    createFileIfNotExists();
 
     /**
      * Get status
@@ -317,12 +322,60 @@ if ($command === 'list') {
      *
      * @var array $data
      */
-    $data = json_decode(file_get_contents(FILE_NAME), true);
+    $data = data();
 
-    if ($status) $data = array_filter($data, fn (array $datum) => $datum['status'] === $status);
+    if ($status) $data = array_filter($data, fn(array $datum) => $datum['status'] === $status);
 
     if (empty($data)) die('No tasks');
 
     print_r($data);
     die();
+}
+
+/**
+ * Stop process due to invalid arguments.
+ *
+ * If the number of arguments does not match the allowed number of arguments
+ *
+ * @param int $numberOfArguments      - The number of arguments passed from the CLI.
+ * @param int $allowedNumberArguments - The allowed number of arguments accepted by the command.
+ *
+ * @return void
+ */
+function invalidArguments(int $numberOfArguments, int $allowedNumberArguments): void
+{
+    if ($numberOfArguments !== $allowedNumberArguments) die("Invalid arguments.");
+}
+
+/**
+ * Check if file exists otherwise create it
+ *
+ * @return void
+ */
+function createFileIfNotExists(): void
+{
+    if (!file_exists(FILE_NAME)) touch(FILE_NAME);
+}
+
+/**
+ * Get the content of the file.
+ *
+ * @return array
+ */
+function data(): array
+{
+    return json_decode(file_get_contents(FILE_NAME), true) ?? [];
+}
+
+/**
+ * Stop process due to no record found.
+ *
+ * @param string $id
+ * @param array  $data
+ *
+ * @return void
+ */
+function noRecordFound(string $id, array $data): void
+{
+    if (!in_array($id, array_column($data, 'id'))) die('No record found');
 }
